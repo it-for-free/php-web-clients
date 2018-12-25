@@ -3,6 +3,9 @@
 namespace ItForFree\WebClients\Trumail;
 
 use GuzzleHttp\Client;
+use ItForFree\WebClients\Common\Exception\BadApiResponseException;
+use ItForFree\rusphp\Common\Time\RequestsTimeInterval;
+
 
 /**
  * Валидация verify email-а
@@ -15,36 +18,56 @@ class EmailValidator
     
     protected $guzzleClient = null;
     
-    public function __construct()
+    /**
+     * Объект для рассчета оптимального интервала между запросами
+     * @var ItForFree\rusphp\Common\Time\RequestsTimeInterval 
+     */
+    protected $timeIntervalController = null;
+    
+    public function __construct($baseTimeInterval = 1)
     {
         $this->guzzleClient =  new Client([
             'base_uri' => self::$baseUrl,
         ]);
         
+        $this->timeIntervalController = 
+            new RequestsTimeInterval($baseTimeInterval); 
     }
     
     /**
+     * 
      * Check mail is deliverable
-     * 
-     * @param string $email
-     * @return bool
+     * @param string  $email
+     * @param boolean accept or not this email in case server is in "catch-All"
+     *    mode @see http://fkn.ktu10.com/?q=node/10336
+     * @return type
      */
-    public function verify($email)
+    public function verify($email, $trustCatchAll = true)
     {
         $Response = $this->getTrumailResponce($email);
-        return ($Response->deliverable ?? false);
+        if (!isset($Response->deliverable)) {
+            throw new BadApiResponseException($Response);
+        }
+        
+        $result = $Response->deliverable &&
+                ($trustCatchAll || $Response->catchAll);
+
+        return $result;
     }
     
-    /**
-     * Check mail is deliverable and (!) server not in "catch-All" mode
-     * @see http://fkn.ktu10.com/?q=node/10336
-     * 
-     * @param string $email
-     * @return bool
-     */
-    public function strongVerify($email)
+
+    public function verifyNext($email, $trustCatchAll = true, $startInterval = 1)
     {
-        $Response = $this->getTrumailResponce($email);
+        
+//        try {
+//            $result = $this->verify($email, $trustCatchAll);
+//        } 
+//        catch () {
+//            
+//        }
+        
+        $this->timeIntervalController->update($result);
+        
         return ($Response->deliverable ?? false) 
             && (!($Response->catchAll ?? false));
     }
