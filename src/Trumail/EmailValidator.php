@@ -64,7 +64,7 @@ class EmailValidator
         
         while ($exceptionCatched) { // пока не обойдётся без ислючения
             $exceptionCatched = false;
-            
+            // wait !!!
             try {
                 $result = $this->verify($email, $trustCatchAll);
             } 
