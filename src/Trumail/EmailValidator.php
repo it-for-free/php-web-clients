@@ -40,10 +40,12 @@ class EmailValidator
      * @param string  $email
      * @param boolean accept or not this email in case server is in "catch-All"
      *    mode @see http://fkn.ktu10.com/?q=node/10336
-     * @return type
+     * @return boolean
      */
     public function verify($email, $trustCatchAll = true)
     {
+        $result = false;
+        
         $Response = $this->getTrumailResponce($email);
         if (!isset($Response->deliverable)) {
             throw new BadApiResponseException($Response);
@@ -56,20 +58,28 @@ class EmailValidator
     }
     
 
-    public function verifyNext($email, $trustCatchAll = true, $startInterval = 1)
+    public function verifyNext($email, $trustCatchAll = true, $printLog = false)
     {
+        $exceptionCatched = true;
         
-//        try {
-//            $result = $this->verify($email, $trustCatchAll);
-//        } 
-//        catch () {
-//            
-//        }
+        while ($exceptionCatched) { // пока не обойдётся без ислючения
+            $exceptionCatched = false;
+            
+            try {
+                $result = $this->verify($email, $trustCatchAll);
+            } 
+            catch (BadApiResponseException $e) {   
+                $exceptionCatched = true;
+                if ($printLog) {
+                    echo "Problem: We need one more attempt for $email: ",
+                        $e->getMessage(), "\n";
+                }
+            }
+            
+            $this->timeIntervalController->update(!$exceptionCatched); 
+        }
         
-        $this->timeIntervalController->update($result);
-        
-        return ($Response->deliverable ?? false) 
-            && (!($Response->catchAll ?? false));
+        return $result;
     }
    
     /**
