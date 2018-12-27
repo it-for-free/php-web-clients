@@ -24,6 +24,10 @@ class EmailValidator
      */
     protected $timeIntervalController = null;
     
+    /**
+     * @param int $baseTimeInterval минимальный интервал ожидания в секундах
+     * между запросами, по умолчанию 1 секунда
+     */
     public function __construct($baseTimeInterval = 1)
     {
         $this->guzzleClient =  new Client([
@@ -35,17 +39,18 @@ class EmailValidator
     }
     
     /**
-     * 
      * Check mail is deliverable
+     * DON'T USE this method directly to avoid temp ban (if you have no other solutions to avoid it)
+     * USE ->verifyNext()
+     * 
      * @param string  $email
      * @param boolean $trustCatchAll accept or not this email in case server is in "catch-All"
      *    mode @see http://fkn.ktu10.com/?q=node/10336
      * @return boolean
+     * @throws BadApiResponseException
      */
-    public function verify($email, $trustCatchAll = true)
+    protected function verify($email, $trustCatchAll = true)
     {
-        $result = false;
-        
         $Response = $this->getTrumailResponce($email);
         if (!isset($Response->deliverable)) {
             throw new BadApiResponseException($Response);
@@ -85,14 +90,13 @@ class EmailValidator
             catch (BadApiResponseException $e) {   
                 $exceptionCatched = true;
                 if ($printLog) {
-                    echo " $email: ",
-                        $e->getMessage(), "\n";
+                    echo (" $email: " . $e . "\n");
                 }
             }
             $this->timeIntervalController->update(!$exceptionCatched); 
             
-            if (!$exceptionCatched && $printLog) {
-                echo " Current time wait interval: " 
+            if ($exceptionCatched && $printLog) {
+                echo "New time wait interval: " 
                     . $this->timeIntervalController->getCurrentInterval()
                     . " \n";
             }

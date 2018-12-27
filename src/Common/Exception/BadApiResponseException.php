@@ -16,8 +16,8 @@ class BadApiResponseException extends \Exception
 
     // Переопределим строковое представление объекта.
     public function __toString() {
-        return __CLASS__ . ": [!] Response is incorrect: " . print_r($Responce, true) .  "\n";
+        return __CLASS__ . ": [!] Response is incorrect: " 
+            . print_r($this->responce, true) .  "\n";
     }
 
 }
-
