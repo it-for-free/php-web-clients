@@ -38,7 +38,7 @@ class EmailValidator
      * 
      * Check mail is deliverable
      * @param string  $email
-     * @param boolean accept or not this email in case server is in "catch-All"
+     * @param boolean $trustCatchAll accept or not this email in case server is in "catch-All"
      *    mode @see http://fkn.ktu10.com/?q=node/10336
      * @return boolean
      */
@@ -57,26 +57,45 @@ class EmailValidator
         return $result;
     }
     
-
+    
+    /**
+     * 
+     * Проверит на доставляемость с ожиданием между запросами 
+     * (вызывайте этот метод во внешнем цикле)
+     * 
+     * ((Check mail is deliverable with waiting between requests))
+     * 
+     * 
+     * @param string  $email
+     * @param boolean $trustCatchAll accept or not this email in case server is in "catch-All"
+     * @param string $printLog       verbose mode (печатать ли лог сообщений)
+     * @return type
+     */
     public function verifyNext($email, $trustCatchAll = true, $printLog = false)
     {
         $exceptionCatched = true;
         
         while ($exceptionCatched) { // пока не обойдётся без ислючения
             $exceptionCatched = false;
-            // wait !!!
+            
+            $this->timeIntervalController->wait();
             try {
                 $result = $this->verify($email, $trustCatchAll);
             } 
             catch (BadApiResponseException $e) {   
                 $exceptionCatched = true;
                 if ($printLog) {
-                    echo "Problem: We need one more attempt for $email: ",
+                    echo " $email: ",
                         $e->getMessage(), "\n";
                 }
             }
-            
             $this->timeIntervalController->update(!$exceptionCatched); 
+            
+            if (!$exceptionCatched && $printLog) {
+                echo " Current time wait interval: " 
+                    . $this->timeIntervalController->getCurrentInterval()
+                    . " \n";
+            }
         }
         
         return $result;
