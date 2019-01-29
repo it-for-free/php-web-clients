@@ -20,22 +20,21 @@ class EmailValidator
     
     /**
      * Объект для рассчета оптимального интервала между запросами
-     * @var ItForFree\rusphp\Common\Time\RequestsTimeInterval 
+     * @var ItForFree\rusphp\Common\Time\RequestsTimeIntervalInterface 
      */
     protected $timeIntervalController = null;
     
     /**
-     * @param int $baseTimeInterval минимальный интервал ожидания в секундах
-     * между запросами, по умолчанию 1 секунда
+     * @param  ItForFree\rusphp\Common\Time\RequestsTimeIntervalInterface $timeIntervalController
+     *  time interval calculator (if need)
      */
-    public function __construct($baseTimeInterval = 1)
+    public function __construct($timeIntervalController = null)
     {
         $this->guzzleClient =  new Client([
             'base_uri' => self::$baseUrl,
         ]);
         
-        $this->timeIntervalController = 
-            new RequestsTimeInterval($baseTimeInterval); 
+        $this->timeIntervalController = $timeIntervalController; 
     }
     
     /**
@@ -83,7 +82,9 @@ class EmailValidator
         while ($exceptionCatched) { // пока не обойдётся без ислючения
             $exceptionCatched = false;
             
-            $this->timeIntervalController->wait();
+            if ($this->timeIntervalController) {
+                $this->timeIntervalController->wait();
+            }
             try {
                 $result = $this->verify($email, $trustCatchAll);
             } 
@@ -93,9 +94,12 @@ class EmailValidator
                     echo (" $email: " . $e . "\n");
                 }
             }
-            $this->timeIntervalController->update(!$exceptionCatched); 
             
-            if ($exceptionCatched && $printLog) {
+            if ($this->timeIntervalController) {
+                $this->timeIntervalController->update(!$exceptionCatched); 
+            }
+            
+            if ($this->timeIntervalController && $exceptionCatched && $printLog) {
                 echo "New time wait interval: " 
                     . $this->timeIntervalController->getCurrentInterval()
                     . " \n";
