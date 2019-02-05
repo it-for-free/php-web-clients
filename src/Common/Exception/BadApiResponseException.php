@@ -11,12 +11,16 @@ class BadApiResponseException extends \Exception
         // некоторый код 
         $this->responce = $Responce;
         // убедитесь, что все передаваемые параметры верны
-        parent::__construct('API Response is incorrect', $code, $previous);
+        $message = 'Trumail API Response is incorrect';
+        if (!empty($Responce->Message)) {
+            $message = $Responce->Message;
+        }
+        parent::__construct($message, $code, $previous);
     }
 
     // Переопределим строковое представление объекта.
     public function __toString() {
-        return __CLASS__ . ": [!] Response is incorrect: " 
+        return __CLASS__ . ": [!] Trumail Response object: " 
             . print_r($this->responce, true) .  "\n";
     }
 

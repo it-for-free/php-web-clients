@@ -4,8 +4,6 @@ namespace ItForFree\WebClients\Trumail;
 
 use GuzzleHttp\Client;
 use ItForFree\WebClients\Common\Exception\BadApiResponseException;
-use ItForFree\rusphp\Common\Time\RequestsTimeInterval;
-
 
 /**
  * Валидация verify email-а
@@ -23,6 +21,14 @@ class EmailValidator
      * @var ItForFree\rusphp\Common\Time\RequestsTimeIntervalInterface 
      */
     protected $timeIntervalController = null;
+    
+    /**
+     *
+     * @var string[] Сообщение нестандартного ответа, при которых не следует делать  ещё одну попытку 
+     */
+    protected $badEmailResponceMessages = [
+        'No response received from mail server'
+    ];
     
     /**
      * @param  ItForFree\rusphp\Common\Time\RequestsTimeIntervalInterface $timeIntervalController
@@ -89,9 +95,15 @@ class EmailValidator
                 $result = $this->verify($email, $trustCatchAll);
             } 
             catch (BadApiResponseException $e) {   
+//                echo ('123123' . $e);
                 $exceptionCatched = true;
                 if ($printLog) {
                     echo (" $email: " . $e . "\n");
+                }
+                
+                if (in_array($e->getMessage(), $badEmailResponceMessages)) {
+                    $result = false;
+                    break;
                 }
             }
             
