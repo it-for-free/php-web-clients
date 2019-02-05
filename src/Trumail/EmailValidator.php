@@ -101,7 +101,7 @@ class EmailValidator
                     echo (" $email: " . $e . "\n");
                 }
                 
-                if (in_array($e->getMessage(), $badEmailResponceMessages)) {
+                if (in_array($e->getMessage(), $this->badEmailResponceMessages)) {
                     $result = false;
                     break;
                 }
