@@ -62,7 +62,7 @@ class EmailValidator
         }
         
         $result = $Response->deliverable &&
-                ($trustCatchAll || $Response->catchAll);
+                ($trustCatchAll || !$Response->catchAll); 
 
         return $result;
     }
